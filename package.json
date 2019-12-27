@@ -1,0 +1,32 @@
+{
+  "name": "node-elements",
+  "version": "0.0.2",
+  "description": "Typescript/node bindings for Elements",
+  "main": "lib/elements.js",
+  "types": "lib/elements.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kallewoof/node-elements.git"
+  },
+  "author": "Karl-Johan Alm",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kallewoof/node-elements/issues"
+  },
+  "homepage": "https://github.com/kallewoof/node-elements#readme",
+  "dependencies": {
+    "@types/node": "^13.1.1",
+    "bcrpc": "^0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.7.4"
+  },
+  "files": [
+    "lib/**/*"
+  ]
+}
