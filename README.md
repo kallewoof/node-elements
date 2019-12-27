@@ -5,7 +5,7 @@ Typescript/node bindings for Elements, using bcrpc.
 When making a request, you often need to either check the result, or use `.get()` on the command, which will throw an exception if an Elements or other error was encountered.
 
 Example:
-```Typescript
+```JavaScript
 // dict helper
 const KV = (k, v) => {
     const kv = {};
