@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "outDir": "./lib",
+        "allowJs": false,
+        "target": "es5",
+        "lib": ["es2017", "es7", "es6", "dom"],
+        "declaration": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noImplicitThis": true,
+        "module": "commonjs",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "esModuleInterop": true,
+        "strict": false /* TODO: set to true and fix compiler issues */
+    },
+    "include": [
+        "src/**/*"
+    ]
+}
