@@ -492,10 +492,10 @@ export const GetRawChangeAddress = (address_type?: AddressType): Result<string> 
 // RPC: lockunspent
 //
 
-export const LockUnspent = (unlock: boolean, transactions?: [Outpoint]): Result<boolean> => Try<boolean>(() => client.lockUnspentS(unlock, transactions));
+export const LockUnspent = (unlock: boolean, transactions?: Array<Outpoint>): Result<boolean> => Try<boolean>(() => client.lockUnspentS(unlock, transactions));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: listlockunspent
 //
 
-export const ListLockUnspent = (): Result<[Outpoint]> => Try<[Outpoint]>(() => client.listLockUnspentS());
+export const ListLockUnspent = (): Result<Array<Outpoint>> => Try<Array<Outpoint>>(() => client.listLockUnspentS());
