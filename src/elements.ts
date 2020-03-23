@@ -70,7 +70,7 @@ export interface IResult<IType> {
 
 export class Result<IType> implements IResult<IType> {
     constructor(val: IType | Error | { code: number; message: string; }) {
-        if (typeof val == "string" || typeof val == "number") {
+        if (typeof val == "string" || typeof val == "number" || typeof val == "boolean") {
             this.result = val;
         } else if ("code" in val) {
             this.elementsError = val;
