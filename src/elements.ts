@@ -487,3 +487,15 @@ export const GetAddressInfo = (address: string): Result<AddressInfo> => Try<Addr
 //
 
 export const GetRawChangeAddress = (address_type?: AddressType): Result<string> => Try<string>(() => client.getRawChangeAddressS(address_type));
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: lockunspent
+//
+
+export const LockUnspent = (unlock: boolean, transactions?: [Outpoint]): Result<boolean> => Try<boolean>(() => client.lockUnspentS(unlock, transactions));
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: listlockunspent
+//
+
+export const ListLockUnspent = (): Result<[Outpoint]> => Try<[Outpoint]>(() => client.listLockUnspentS());
