@@ -504,4 +504,4 @@ export const ListLockUnspent = (): Result<Array<Outpoint>> => Try<Array<Outpoint
 // RPC: getblockcount
 //
 
-export const GetBlockCount = (): Result<number> => Try<number>(() => client.GetBlockCountS());
+export const GetBlockCount = (): Result<number> => Try<number>(() => client.getBlockCountS());
