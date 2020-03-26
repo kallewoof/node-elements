@@ -499,3 +499,9 @@ export const LockUnspent = (unlock: boolean, transactions?: Array<Outpoint>): Re
 //
 
 export const ListLockUnspent = (): Result<Array<Outpoint>> => Try<Array<Outpoint>>(() => client.listLockUnspentS());
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: getblockcount
+//
+
+export const GetBlockCount = (): Result<number> => Try<number>(() => client.GetBlockCountS());
