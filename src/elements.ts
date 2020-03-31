@@ -85,10 +85,10 @@ const ParseResult = <IType>(val: IType | Error | { code: number; message: string
     return val;
 };
 
-const Try = async <Retval>(p: Promise<IResult<Retval>>): Promise<Retval> => {
+const Try = async <Retval>(p: Promise<Retval>): Promise<Retval> => {
     try {
         const r = await p;
-        return ParseResult(r.result!);
+        return ParseResult(r);
     } catch (e) {
         return Promise.reject(e);
     }
