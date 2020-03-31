@@ -75,7 +75,7 @@ export class ElementsError extends Error {
 }
 
 const ParseResult = <IType>(val: IType | Error | { code: number; message: string; }): IType => {
-    if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
+    if (typeof val === "string" || typeof val === "number" || typeof val === "boolean" || typeof val === "undefined") {
         return val;
     } else if ("code" in val) {
         throw new ElementsError(val.code, val.message);
