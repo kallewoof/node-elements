@@ -65,47 +65,39 @@ export interface IResult<IType> {
     get(): IType;
 }
 
-export class Result<IType> implements IResult<IType> {
-    constructor(val: IType | Error | { code: number; message: string; }) {
-        if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
-            this.result = val;
-        } else if ("code" in val) {
-            this.elementsError = val;
-        } else if (val instanceof Error) {
-            this.error = val;
-        } else {
-            this.result = val;
-        }
-    }
-    error?: Error;
-    elementsError?: {
-        code: number;
-        message: string;
-    };
-    result?: IType;
-    get(): IType {
-        if (this.result) {
-            return this.result;
-        } else if (this.elementsError) {
-            throw new Error(`elements error ${this.elementsError.code}: ${this.elementsError.message}`);
-        }
-        throw this.error;
+export class ElementsError extends Error {
+    code: number;
+    constructor(code: number, message: string) {
+        super(message);
+        this.name = "ElementsError";
+        this.code = code;
     }
 }
 
-const Try = async <Retval>(p: Promise<IResult<Retval>>): Promise<Result<Retval>> => {
+const ParseResult = <IType>(val: IType | Error | { code: number; message: string; }): IType => {
+    if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
+        return val;
+    } else if ("code" in val) {
+        throw new ElementsError(val.code, val.message);
+    } else if (val instanceof Error) {
+        throw val;
+    }
+    return val;
+};
+
+const Try = async <Retval>(p: Promise<IResult<Retval>>): Promise<Retval> => {
     try {
         const r = await p;
-        return new Result(r.result!);
+        return ParseResult(r.result!);
     } catch (e) {
-        return new Result(e);
+        return Promise.reject(e);
     }
 }
 
 const Do = async <Retval>(
         cmd: string,
         ...args: (string | boolean | number | object | undefined)[])
-: Promise<Result<Retval>> => {
+: Promise<Retval> => {
     while (args.length > 0 && typeof args[args.length - 1] === "undefined") args.pop();
     return Try<Retval>(client[cmd](...args));
 }
@@ -194,7 +186,7 @@ export const ListSinceBlock = (
         targetConfirmations: number = 1,
         includeWatchonly: boolean = false,
         includeRemoved: boolean = true
-): Promise<Result<ListSinceBlockResult>> =>
+): Promise<ListSinceBlockResult> =>
     Try<ListSinceBlockResult>(client.listSinceBlock(blockhash, targetConfirmations, includeWatchonly, includeRemoved));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +201,7 @@ export const RawBlindRawTransaction = (
         inputassetblinders: string[],
         totalblinder?: string,
         ignoreblindfail: boolean = true)
-: Promise<Result<string>> =>
+: Promise<string> =>
     Try<string>(client.rawBlindRawTransaction(hexstring, inputamountblinders, inputamounts,
             inputassets, inputassetblinders, totalblinder, ignoreblindfail));
 
@@ -244,7 +236,7 @@ export const SignRawTransactionWithWallet = (
         hexstring: string,
         prevtxs?: SRTWWPrevTx[],
         sighashtype: SighashType = "ALL")
-: Promise<Result<SignRawTransactionWithWalletResult>> =>
+: Promise<SignRawTransactionWithWalletResult> =>
     Try<SignRawTransactionWithWalletResult>(client.signRawTransactionWithWallet(hexstring, prevtxs, sighashtype));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -254,7 +246,7 @@ export const SignRawTransactionWithWallet = (
 export const SendRawTransaction = (
         hexstring: string,
         allowhighfees: boolean = false)
-: Promise<Result<string>> =>
+: Promise<string> =>
     Try<string>(client.sendRawTransaction(hexstring, allowhighfees));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -266,7 +258,7 @@ export interface UnblindRawTransactionResult {
 }
 
 export const UnblindRawTransaction = (hex: string)
-: Promise<Result<UnblindRawTransactionResult>> =>
+: Promise<UnblindRawTransactionResult> =>
     Try<UnblindRawTransactionResult>(client.unblindRawTransaction(hex));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -296,7 +288,7 @@ export const FundRawTransaction = (
         hexstring: string,
         options?: FundRawTransactionOptions,
         iswitness?: boolean)
-: Promise<Result<FundRawTransactionResult>> =>
+: Promise<FundRawTransactionResult> =>
     Do<FundRawTransactionResult>('fundRawTransaction', hexstring, options, iswitness);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -330,7 +322,7 @@ export const CreateRawTransaction = (
         locktime: number = 0,
         replaceable: boolean = false,
         outputAssets?: CRTOutputAssets)
-: Promise<Result<string>> =>
+: Promise<string> =>
     Try<string>(client.createRawTransaction(inputs, outputs, locktime, replaceable, outputAssets));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -340,7 +332,7 @@ export const CreateRawTransaction = (
 export const DecodeRawTransaction = (
         hexstring: string,
         iswitness?: boolean)
-: Promise<Result<Transaction>> =>
+: Promise<Transaction> =>
     Do<Transaction>('decodeRawTransaction', hexstring, iswitness);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -354,14 +346,14 @@ export const GetBalance = (
         minconf: number = 0,
         includeWatchonly: boolean = false,
         assetlabel?: string)
-: Promise<Result<Balance>> =>
+: Promise<Balance> =>
     Try<Balance>(client.getBalance(dummy, minconf, includeWatchonly, assetlabel));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getunconfirmedbalance
 //
 
-export const GetUnconfirmedBalance = (): Promise<Result<Balance>> =>
+export const GetUnconfirmedBalance = (): Promise<Balance> =>
     Try<Balance>(client.getUnconfirmedBalance());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -373,7 +365,7 @@ export type AddressType = "legacy" | "p2sh-segwit" | "bech32";
 export const GetNewAddress = (
         label?: string,
         addressType?: AddressType)
-: Promise<Result<string>> =>
+: Promise<string> =>
     Try<string>(client.getNewAddress(label, addressType));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -390,14 +382,14 @@ export interface GetTransactionResult extends WalletTxEntry {
 export const GetTransaction = (
         txid: string,
         includeWatchonly: boolean = false)
-: Promise<Result<GetTransactionResult>> =>
+: Promise<GetTransactionResult> =>
     Try<GetTransactionResult>(client.getTransaction(txid, includeWatchonly));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getblockhash
 //
 
-export const GetBlockHash = (height: number): Promise<Result<string>> => Try<string>(client.getBlockHash(height));
+export const GetBlockHash = (height: number): Promise<string> => Try<string>(client.getBlockHash(height));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getblock
@@ -441,8 +433,8 @@ export interface BlockInfo {
     nextblockhash: string;
 }
 
-export const GetBlock0 = (hash: string): Promise<Result<string>> => Try<string>(client.getBlock(hash, 0));
-export const GetBlock1 = (hash: string): Promise<Result<BlockInfo>> => Try<BlockInfo>(client.getBlock(hash, 1));
+export const GetBlock0 = (hash: string): Promise<string> => Try<string>(client.getBlock(hash, 0));
+export const GetBlock1 = (hash: string): Promise<BlockInfo> => Try<BlockInfo>(client.getBlock(hash, 1));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: listunspent
@@ -481,7 +473,7 @@ export const ListUnspent = (
         addresses: string[] = [],
         includeUnsafe: boolean = true,
         queryOptions: ListUnspentQueryOptions = {}
-    ): Promise<Result<UTXO[]>> =>
+    ): Promise<UTXO[]> =>
         Try<UTXO[]>(client.listUnspent(minconf, maxconf, addresses, includeUnsafe, queryOptions));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -527,14 +519,14 @@ export interface AddressInfo {
     labels: AddressLabel[];
 }
 
-export const GetAddressInfo = (address: string): Promise<Result<AddressInfo>> =>
+export const GetAddressInfo = (address: string): Promise<AddressInfo> =>
     Try<AddressInfo>(client.getAddressInfo(address));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getrawchangeaddress
 //
 
-export const GetRawChangeAddress = (addressType?: AddressType): Promise<Result<string>> =>
+export const GetRawChangeAddress = (addressType?: AddressType): Promise<string> =>
     Try<string>(client.getRawChangeAddress(addressType));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -544,16 +536,16 @@ export const GetRawChangeAddress = (addressType?: AddressType): Promise<Result<s
 export const LockUnspent = (
         unlock: boolean,
         transactions?: Outpoint[])
-: Promise<Result<boolean>> => Try<boolean>(client.lockUnspent(unlock, transactions));
+: Promise<boolean> => Try<boolean>(client.lockUnspent(unlock, transactions));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: listlockunspent
 //
 
-export const ListLockUnspent = (): Promise<Result<Outpoint[]>> => Try<Outpoint[]>(client.listLockUnspent());
+export const ListLockUnspent = (): Promise<Outpoint[]> => Try<Outpoint[]>(client.listLockUnspent());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getblockcount
 //
 
-export const GetBlockCount = (): Promise<Result<number>> => Try<number>(client.getBlockCount());
+export const GetBlockCount = (): Promise<number> => Try<number>(client.getBlockCount());
