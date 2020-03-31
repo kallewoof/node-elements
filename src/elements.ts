@@ -1,24 +1,21 @@
 const bcrpc = require('bcrpc');
-const utils = require('./utils');
 
 import { config, Configuration, RPCHost } from './config';
 
-utils.deasyncObject(bcrpc);
-
-const up = (config: RPCHost) => new bcrpc(
+const up = (cfg: RPCHost) => new bcrpc(
     {
         prot: 'http',
-        host: config.host,
-        port: config.rpcport,
-        user: config.user,
-        pass: config.pass,
+        host: cfg.host,
+        port: cfg.rpcport,
+        user: cfg.user,
+        pass: cfg.pass,
     }
 );
 
 export const client = up(config.elementsd);
 
-client.switchNode = (config: Configuration) => {
-    const n = up(config.elementsd);
+client.switchNode = (cfg: Configuration) => {
+    const n = up(cfg.elementsd);
     for (const k of Object.keys(n)) {
         client[k] = n[k];
     }
@@ -30,13 +27,13 @@ client.switchNode = (config: Configuration) => {
 
 export const btc2sat = (btc: number) => btc * 100000000;
 export const sat2btc = (sat: number) => sat / 100000000;
-export const btcarr2sat = (btc: Array<number>) => {
-    let sat: Array<number> = new Array<number>();
+export const btcarr2sat = (btc: number[]) => {
+    const sat: number[] = [];
     for (const b of btc) sat.push(btc2sat(b));
     return sat;
 };
-export const satarr2btc = (sat: Array<number>) => {
-    let btc: Array<number> = new Array<number>();
+export const satarr2btc = (sat: number[]) => {
+    const btc: number[] = [];
     for (const s of sat) btc.push(sat2btc(s));
 }
 export const btcbal2satbal = (bal: {[type: string]: number}) => {
@@ -70,7 +67,7 @@ export interface IResult<IType> {
 
 export class Result<IType> implements IResult<IType> {
     constructor(val: IType | Error | { code: number; message: string; }) {
-        if (typeof val == "string" || typeof val == "number" || typeof val == "boolean") {
+        if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
             this.result = val;
         } else if ("code" in val) {
             this.elementsError = val;
@@ -90,23 +87,27 @@ export class Result<IType> implements IResult<IType> {
         if (this.result) {
             return this.result;
         } else if (this.elementsError) {
-            throw new Error(`elements error ${this.elementsError.code}: ${this.elementsError.message}`); 
+            throw new Error(`elements error ${this.elementsError.code}: ${this.elementsError.message}`);
         }
         throw this.error;
     }
 }
 
-const Try = <Retval>(op: () => IResult<Retval>): Result<Retval> => {
+const Try = async <Retval>(p: Promise<IResult<Retval>>): Promise<Result<Retval>> => {
     try {
-        return new Result(op().result!);
+        const r = await p;
+        return new Result(r.result!);
     } catch (e) {
         return new Result(e);
     }
 }
 
-const Do = <Retval>(cmd: string, ...args: Array<string | boolean | number | object | undefined>): Result<Retval> => {
-    while (args.length > 0 && typeof args[args.length - 1] == "undefined") args.pop();
-    return Try<Retval>(() => client[cmd](...args));
+const Do = async <Retval>(
+        cmd: string,
+        ...args: (string | boolean | number | object | undefined)[])
+: Promise<Result<Retval>> => {
+    while (args.length > 0 && typeof args[args.length - 1] === "undefined") args.pop();
+    return Try<Retval>(client[cmd](...args));
 }
 
 export interface Outpoint {
@@ -124,12 +125,12 @@ export interface ScriptPubKey {
     hex: string;
     reqSigs: number;
     type: string;
-    addresses: Array<string>;
+    addresses: string[];
 }
 
 export interface TxIn extends Outpoint {
     scriptSig: ScriptSig;
-    txinwitness: Array<string>;
+    txinwitness: string[];
     sequence: number;
 }
 
@@ -147,8 +148,8 @@ export interface Transaction {
     weight: number;
     version: number;
     locktime: number;
-    vin: Array<TxIn>;
-    vout: Array<TxOut>;
+    vin: TxIn[];
+    vout: TxOut[];
 }
 
 export interface WalletTxEntry {
@@ -183,20 +184,34 @@ export interface LSBTransaction extends Outpoint, WalletTxEntry, WalletTxDetails
 }
 
 export interface ListSinceBlockResult {
-    transactions: Array<LSBTransaction>;
-    removed: Array<LSBTransaction>;
+    transactions: LSBTransaction[];
+    removed: LSBTransaction[];
     lastblock: string;
 }
 
-export const ListSinceBlock = (blockhash: string, target_confirmations: number = 1, include_watchonly: boolean = false, include_removed: boolean = true): Result<ListSinceBlockResult> =>
-    Try<ListSinceBlockResult>(() => client.listSinceBlockS(blockhash, target_confirmations, include_watchonly, include_removed));
+export const ListSinceBlock = (
+        blockhash: string,
+        targetConfirmations: number = 1,
+        includeWatchonly: boolean = false,
+        includeRemoved: boolean = true
+): Promise<Result<ListSinceBlockResult>> =>
+    Try<ListSinceBlockResult>(client.listSinceBlock(blockhash, targetConfirmations, includeWatchonly, includeRemoved));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: rawblindrawtransaction
 //
 
-export const RawBlindRawTransaction = (hexstring: string, inputamountblinders: Array<string>, inputamounts: Array<number|string>, inputassets: Array<string>, inputassetblinders: Array<string>, totalblinder?: string, ignoreblindfail: boolean = true): Result<string> =>
-    Try<string>(() => client.rawBlindRawTransactionS(hexstring, inputamountblinders, inputamounts, inputassets, inputassetblinders, totalblinder, ignoreblindfail));
+export const RawBlindRawTransaction = (
+        hexstring: string,
+        inputamountblinders: string[],
+        inputamounts: (number|string)[],
+        inputassets: string[],
+        inputassetblinders: string[],
+        totalblinder?: string,
+        ignoreblindfail: boolean = true)
+: Promise<Result<string>> =>
+    Try<string>(client.rawBlindRawTransaction(hexstring, inputamountblinders, inputamounts,
+            inputassets, inputassetblinders, totalblinder, ignoreblindfail));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: signrawtransactionwithwallet
@@ -221,19 +236,26 @@ export interface SRTWWError extends Outpoint {
 export interface SignRawTransactionWithWalletResult {
     hex: string;
     complete: boolean;
-    errors?: Array<SRTWWError>;
+    errors?: SRTWWError[];
     warning?: string;
 }
 
-export const SignRawTransactionWithWallet = (hexstring: string, prevtxs?: Array<SRTWWPrevTx>, sighashtype: SighashType = "ALL"): Result<SignRawTransactionWithWalletResult> =>
-    Try<SignRawTransactionWithWalletResult>(() => client.signRawTransactionWithWalletS(hexstring, prevtxs, sighashtype));
+export const SignRawTransactionWithWallet = (
+        hexstring: string,
+        prevtxs?: SRTWWPrevTx[],
+        sighashtype: SighashType = "ALL")
+: Promise<Result<SignRawTransactionWithWalletResult>> =>
+    Try<SignRawTransactionWithWalletResult>(client.signRawTransactionWithWallet(hexstring, prevtxs, sighashtype));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: sendrawtransaction
 //
 
-export const SendRawTransaction = (hexstring: string, allowhighfees: boolean = false): Result<string> =>
-    Try<string>(() => client.sendRawTransactionS(hexstring, allowhighfees));
+export const SendRawTransaction = (
+        hexstring: string,
+        allowhighfees: boolean = false)
+: Promise<Result<string>> =>
+    Try<string>(client.sendRawTransaction(hexstring, allowhighfees));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: unblindrawtransaction
@@ -243,7 +265,9 @@ export interface UnblindRawTransactionResult {
     hex: string;
 }
 
-export const UnblindRawTransaction = (hex: string): Result<UnblindRawTransactionResult> => Try<UnblindRawTransactionResult>(() => client.unblindRawTransactionS(hex));
+export const UnblindRawTransaction = (hex: string)
+: Promise<Result<UnblindRawTransactionResult>> =>
+    Try<UnblindRawTransactionResult>(client.unblindRawTransaction(hex));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: fundrawtransaction
@@ -256,7 +280,7 @@ export interface FundRawTransactionOptions {
     includeWatching?: boolean;
     lockUnspents?: boolean;
     feeRate?: number;
-    subtractFeeFromOutputs?: Array<number>;
+    subtractFeeFromOutputs?: number[];
     replaceable?: boolean;
     conf_target?: number;
     estimate_mode?: "UNSET" | "ECONOMICAL" | "CONSERVATIVE";
@@ -268,9 +292,12 @@ export interface FundRawTransactionResult {
     changepos: number;
 }
 
-export const FundRawTransaction = (hexstring: string, options?: FundRawTransactionOptions, iswitness?: boolean): Result<FundRawTransactionResult> =>
-    Do<FundRawTransactionResult>('fundRawTransactionS', hexstring, options, iswitness);
-    // Try<FundRawTransactionResult>(() => client.fundRawTransactionS(hexstring, options, iswitness));
+export const FundRawTransaction = (
+        hexstring: string,
+        options?: FundRawTransactionOptions,
+        iswitness?: boolean)
+: Promise<Result<FundRawTransactionResult>> =>
+    Do<FundRawTransactionResult>('fundRawTransaction', hexstring, options, iswitness);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: createrawtransaction
@@ -297,15 +324,24 @@ export interface CRTOutputAssets {
     [type: string]: string;
 }
 
-export const CreateRawTransaction = (inputs: Array<CRTInput>, outputs: Array<CRTOutput>, locktime: number = 0, replaceable: boolean = false, output_assets?: CRTOutputAssets): Result<string> =>
-    Try<string>(() => client.createRawTransactionS(inputs, outputs, locktime, replaceable, output_assets));
+export const CreateRawTransaction = (
+        inputs: CRTInput[],
+        outputs: CRTOutput[],
+        locktime: number = 0,
+        replaceable: boolean = false,
+        outputAssets?: CRTOutputAssets)
+: Promise<Result<string>> =>
+    Try<string>(client.createRawTransaction(inputs, outputs, locktime, replaceable, outputAssets));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: decoderawtransaction
 //
 
-export const DecodeRawTransaction = (hexstring: string, iswitness?: boolean): Result<Transaction> =>
-    Do<Transaction>('decodeRawTransactionS', hexstring, iswitness);
+export const DecodeRawTransaction = (
+        hexstring: string,
+        iswitness?: boolean)
+: Promise<Result<Transaction>> =>
+    Do<Transaction>('decodeRawTransaction', hexstring, iswitness);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getbalance
@@ -313,15 +349,20 @@ export const DecodeRawTransaction = (hexstring: string, iswitness?: boolean): Re
 
 export type Balance = { [type: string]: number };
 
-export const GetBalance = (dummy?: string, minconf: number = 0, include_watchonly: boolean = false, assetlabel?: string): Result<Balance> =>
-    Try<Balance>(() => client.getBalanceS(dummy, minconf, include_watchonly, assetlabel));
+export const GetBalance = (
+        dummy?: string,
+        minconf: number = 0,
+        includeWatchonly: boolean = false,
+        assetlabel?: string)
+: Promise<Result<Balance>> =>
+    Try<Balance>(client.getBalance(dummy, minconf, includeWatchonly, assetlabel));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getunconfirmedbalance
 //
 
-export const GetUnconfirmedBalance = (): Result<Balance> =>
-    Try<Balance>(() => client.getUnconfirmedBalanceS());
+export const GetUnconfirmedBalance = (): Promise<Result<Balance>> =>
+    Try<Balance>(client.getUnconfirmedBalance());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getnewaddress
@@ -329,8 +370,11 @@ export const GetUnconfirmedBalance = (): Result<Balance> =>
 
 export type AddressType = "legacy" | "p2sh-segwit" | "bech32";
 
-export const GetNewAddress = (label?: string, address_type?: AddressType): Result<string> =>
-    Try<string>(() => client.getNewAddressS(label, address_type));
+export const GetNewAddress = (
+        label?: string,
+        addressType?: AddressType)
+: Promise<Result<string>> =>
+    Try<string>(client.getNewAddress(label, addressType));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: gettransaction
@@ -338,19 +382,22 @@ export const GetNewAddress = (label?: string, address_type?: AddressType): Resul
 
 export interface GetTransactionResult extends WalletTxEntry {
     txid: string;
-    "details" : Array<WalletTxDetails>;
+    details: WalletTxDetails[];
     hex: string;
-    walletconflicts: Array<string>;
+    walletconflicts: string[];
 }
 
-export const GetTransaction = (txid: string, include_watchonly: boolean = false): Result<GetTransactionResult> =>
-    Try<GetTransactionResult>(() => client.getTransactionS(txid, include_watchonly));
+export const GetTransaction = (
+        txid: string,
+        includeWatchonly: boolean = false)
+: Promise<Result<GetTransactionResult>> =>
+    Try<GetTransactionResult>(client.getTransaction(txid, includeWatchonly));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getblockhash
 //
 
-export const GetBlockHash = (height: number): Result<string> => Try<string>(() => client.getBlockHashS(height));
+export const GetBlockHash = (height: number): Promise<Result<string>> => Try<string>(client.getBlockHash(height));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getblock
@@ -366,7 +413,7 @@ export interface BlockInfo {
     version: number;
     versionHex: string;
     merkleroot: string;
-    tx: Array<string>;
+    tx: string[];
     time: number;
     mediantime: number;
     nonce: number;
@@ -381,21 +428,21 @@ export interface BlockInfo {
             signblockscript: string;
             max_block_witness: number;
             fedpegscript: string;
-            extension_space: Array<string>;
+            extension_space: string[];
         },
         proposed: {
             signblockscript: string;
             max_block_witness: number;
             fedpegscript: string;
-            extension_space: Array<string>;
+            extension_space: string[];
         };
     };
     previousblockhash: string;
     nextblockhash: string;
 }
 
-export const GetBlock0 = (hash: string): Result<string> => Try<string>(() => client.getBlockS(hash, 0));
-export const GetBlock1 = (hash: string): Result<BlockInfo> => Try<BlockInfo>(() => client.getBlockS(hash, 1));
+export const GetBlock0 = (hash: string): Promise<Result<string>> => Try<string>(client.getBlock(hash, 0));
+export const GetBlock1 = (hash: string): Promise<Result<BlockInfo>> => Try<BlockInfo>(client.getBlock(hash, 1));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: listunspent
@@ -431,11 +478,11 @@ export interface ListUnspentQueryOptions {
 export const ListUnspent = (
         minconf: number = 1,
         maxconf: number = 9999999,
-        addresses: Array<string> = [],
-        include_unsafe: boolean = true,
-        query_options: ListUnspentQueryOptions = {}
-    ): Result<Array<UTXO>> =>
-        Try<Array<UTXO>>(() => client.listUnspentS(minconf, maxconf, addresses, include_unsafe, query_options));
+        addresses: string[] = [],
+        includeUnsafe: boolean = true,
+        queryOptions: ListUnspentQueryOptions = {}
+    ): Promise<Result<UTXO[]>> =>
+        Try<UTXO[]>(client.listUnspent(minconf, maxconf, addresses, includeUnsafe, queryOptions));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getaddressinfo
@@ -464,7 +511,7 @@ export interface AddressInfo {
     witness_program?: string;
     script?: OutputScriptType;
     hex?: string;
-    pubkeys?: Array<string>;
+    pubkeys?: string[];
     sigsrequired?: number;
     pubkey?: string;
     embedded?: AddressInfo;
@@ -477,31 +524,36 @@ export interface AddressInfo {
     hdkeypath?: string;
     hdseedid?: string;
     hdmasterfingerprint?: string;
-    labels: Array<AddressLabel>;
+    labels: AddressLabel[];
 }
 
-export const GetAddressInfo = (address: string): Result<AddressInfo> => Try<AddressInfo>(() => client.getAddressInfoS(address));
+export const GetAddressInfo = (address: string): Promise<Result<AddressInfo>> =>
+    Try<AddressInfo>(client.getAddressInfo(address));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getrawchangeaddress
 //
 
-export const GetRawChangeAddress = (address_type?: AddressType): Result<string> => Try<string>(() => client.getRawChangeAddressS(address_type));
+export const GetRawChangeAddress = (addressType?: AddressType): Promise<Result<string>> =>
+    Try<string>(client.getRawChangeAddress(addressType));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: lockunspent
 //
 
-export const LockUnspent = (unlock: boolean, transactions?: Array<Outpoint>): Result<boolean> => Try<boolean>(() => client.lockUnspentS(unlock, transactions));
+export const LockUnspent = (
+        unlock: boolean,
+        transactions?: Outpoint[])
+: Promise<Result<boolean>> => Try<boolean>(client.lockUnspent(unlock, transactions));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: listlockunspent
 //
 
-export const ListLockUnspent = (): Result<Array<Outpoint>> => Try<Array<Outpoint>>(() => client.listLockUnspentS());
+export const ListLockUnspent = (): Promise<Result<Outpoint[]>> => Try<Outpoint[]>(client.listLockUnspent());
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: getblockcount
 //
 
-export const GetBlockCount = (): Result<number> => Try<number>(() => client.getBlockCountS());
+export const GetBlockCount = (): Promise<Result<number>> => Try<number>(client.getBlockCount());
