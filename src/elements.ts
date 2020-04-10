@@ -75,7 +75,7 @@ export class ElementsError extends Error {
 }
 
 const ParseResult = <IType>(val: IType | Error | { code: number; message: string; }): IType => {
-    if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
+    if (!val || typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
         return val;
     } else if ("code" in val) {
         throw new ElementsError(val.code, val.message);
@@ -610,7 +610,7 @@ export const CombineBlockSigs = (
 // RPC: submitblock
 //
 
-export type SubmitBlockResult = 'rejected' | 'valid?' | undefined;
+export type SubmitBlockResult = 'rejected' | 'valid?' | null;
 
 export const SubmitBlock = (hexdata: string): Promise<SubmitBlockResult> =>
     Do<SubmitBlockResult>('submitBlock', hexdata);
