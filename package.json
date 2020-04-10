@@ -1,6 +1,6 @@
 {
   "name": "node-elements",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Typescript/node bindings for Elements",
   "main": "lib/elements.js",
   "types": "lib/elements.d.ts",
