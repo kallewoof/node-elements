@@ -132,6 +132,11 @@ export interface TxOut {
     scriptPubKey: ScriptPubKey;
 }
 
+export interface SignatureResult {
+    hex: string;
+    complete: boolean;
+}
+
 export interface Transaction {
     txid: string;
     hash: string;
@@ -225,9 +230,7 @@ export interface SRTWWError extends Outpoint {
     error: string;
 }
 
-export interface SignRawTransactionWithWalletResult {
-    hex: string;
-    complete: boolean;
+export interface SignRawTransactionWithWalletResult extends SignatureResult {
     errors?: SRTWWError[];
     warning?: string;
 }
@@ -549,3 +552,65 @@ export const ListLockUnspent = (): Promise<Outpoint[]> => Try<Outpoint[]>(client
 //
 
 export const GetBlockCount = (): Promise<number> => Try<number>(client.getBlockCount());
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: getnewblockhex
+//
+
+export interface DynamicFederationParameters {
+    signblockscript: string;    ///< Hex-encoded block signing script to propose
+    /**
+     * Total size in witness bytes that are allowed in the dynamic federations block witness for blocksigning
+     */
+    max_block_witness: number;
+    /**
+     * Hex-encoded fedpegscript for dynamic block proposal. This is interpreted as a v0 segwit witnessScript,
+     * and fills out the fedpeg_program as such.
+     */
+    fedpegscript: string;
+    /**
+     * Array of additional fields to embed in the dynamic blockheader.
+     *
+     * Has no consensus meaning aside from serialized size changes. This space is currently is only used for
+     * PAK enforcement.
+     */
+    extension_space: string[];
+}
+
+export const GetNewBlockHex = (
+        minTxAge?: number,
+        proposedParameters?: DynamicFederationParameters)
+: Promise<string> => Do<string>('getNewBlockHex', minTxAge, proposedParameters);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: signblock
+//
+
+export interface BlockSignatureEntry {
+    pubkey: string; ///< The signature's pubkey
+    sig: string;    ///< The signature script
+}
+
+export const SignBlock = (
+        blockhex: string,
+        witnessScript?: string)
+: Promise<BlockSignatureEntry[]> => Do<BlockSignatureEntry[]>('signBlock', blockhex, witnessScript);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: combineblocksigs
+//
+
+export const CombineBlockSigs = (
+        blockhex: string,
+        signatures: BlockSignatureEntry[],
+        witnessScript?: string) /* this is considered 'required' in the docs, but it isn't in practice */
+: Promise<SignatureResult> => Do<SignatureResult>('combineBlockSigs', blockhex, signatures, witnessScript);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: submitblock
+//
+
+export type SubmitBlockResult = 'rejected' | 'valid?' | undefined;
+
+export const SubmitBlock = (hexdata: string): Promise<SubmitBlockResult> =>
+    Do<SubmitBlockResult>('submitBlock', hexdata);
