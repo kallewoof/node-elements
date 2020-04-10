@@ -12,7 +12,11 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "esModuleInterop": true,
-        "strict": false /* TODO: set to true and fix compiler issues */
+	"alwaysStrict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "strict": true
     },
     "include": [
         "src/**/*"
