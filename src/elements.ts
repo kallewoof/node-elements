@@ -273,6 +273,21 @@ export const SendToAddress = (
         replaceable, confTarget, estimateMode, assetlabel, ignoreblindfail));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: blindrawtransaction
+//
+
+export const BlindRawTransaction = (
+        hexstring: string,
+        ignoreblindfail: boolean = true,
+        assetCommitments?: string[],
+        blindIssuances: boolean = true,
+        totalblinder?: string
+)
+: Promise<string> =>
+    Try<string>(client.blindRawTransaction(hexstring, ignoreblindfail, assetCommitments,
+        blindIssuances, totalblinder));
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: unblindrawtransaction
 //
 
