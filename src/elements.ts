@@ -649,3 +649,19 @@ export type SubmitBlockResult = 'rejected' | 'valid?' | null;
 
 export const SubmitBlock = (hexdata: string): Promise<SubmitBlockResult> =>
     Do<SubmitBlockResult>('submitBlock', hexdata);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: reissueasset
+//
+
+export interface ReissueAssetResults {
+    txid: string;
+    vin: number;
+}
+
+export const ReissueAsset = (
+        asset: string,
+        assetamount: (number|string)
+)
+: Promise<ReissueAssetResults> =>
+    Try<ReissueAssetResults>(client.reissueAsset(asset, assetamount));
