@@ -253,6 +253,26 @@ export const SendRawTransaction = (
     Try<string>(client.sendRawTransaction(hexstring, allowhighfees));
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: sendtoaddress
+//
+
+export const SendToAddress = (
+        address: string,
+        amount: (number|string),
+        comment?: string,
+        commentTo?: string,
+        subtractfeefromamount: boolean = false,
+        replaceable?: boolean,
+        confTarget?: number,
+        estimateMode?: "UNSET" | "ECONOMICAL" | "CONSERVATIVE",
+        assetlabel?: string,
+        ignoreblindfail: boolean = true
+)
+: Promise<string> =>
+    Try<string>(client.sendToAddress(address, amount, comment, commentTo, subtractfeefromamount,
+        replaceable, confTarget, estimateMode, assetlabel, ignoreblindfail));
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: unblindrawtransaction
 //
 
