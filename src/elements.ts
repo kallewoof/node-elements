@@ -188,9 +188,9 @@ export interface ListSinceBlockResult {
 
 export const ListSinceBlock = (
         blockhash: string,
-        targetConfirmations: number = 1,
-        includeWatchonly: boolean = false,
-        includeRemoved: boolean = true
+        targetConfirmations?: number,
+        includeWatchonly?: boolean,
+        includeRemoved?: boolean
 ): Promise<ListSinceBlockResult> =>
     Do<ListSinceBlockResult>('listSinceBlock', blockhash, targetConfirmations, includeWatchonly, includeRemoved);
 
@@ -205,7 +205,7 @@ export const RawBlindRawTransaction = (
         inputassets: string[],
         inputassetblinders: string[],
         totalblinder?: string,
-        ignoreblindfail: boolean = true)
+        ignoreblindfail?: boolean)
 : Promise<string> =>
     Do<string>('rawBlindRawTransaction', hexstring, inputamountblinders, inputamounts, inputassets,
         inputassetblinders, totalblinder, ignoreblindfail);
@@ -238,7 +238,7 @@ export interface SignRawTransactionWithWalletResult extends SignatureResult {
 export const SignRawTransactionWithWallet = (
         hexstring: string,
         prevtxs?: SRTWWPrevTx[],
-        sighashtype: SighashType = "ALL")
+        sighashtype?: SighashType)
 : Promise<SignRawTransactionWithWalletResult> =>
     Do<SignRawTransactionWithWalletResult>('signRawTransactionWithWallet', hexstring, prevtxs, sighashtype);
 
@@ -248,7 +248,7 @@ export const SignRawTransactionWithWallet = (
 
 export const SendRawTransaction = (
         hexstring: string,
-        allowhighfees: boolean = false)
+        allowhighfees?: boolean)
 : Promise<string> =>
     Do<string>('sendRawTransaction', hexstring, allowhighfees);
 
@@ -261,12 +261,12 @@ export const SendToAddress = (
         amount: (number|string),
         comment?: string,
         commentTo?: string,
-        subtractfeefromamount: boolean = false,
+        subtractfeefromamount?: boolean,
         replaceable?: boolean,
         confTarget?: number,
         estimateMode?: "UNSET" | "ECONOMICAL" | "CONSERVATIVE",
         assetlabel?: string,
-        ignoreblindfail: boolean = true
+        ignoreblindfail?: boolean
 )
 : Promise<string> =>
     Do<string>('sendToAddress', address, amount, comment, commentTo, subtractfeefromamount,
@@ -357,8 +357,8 @@ export interface CRTOutputAssets {
 export const CreateRawTransaction = (
         inputs: CRTInput[],
         outputs: CRTOutput[],
-        locktime: number = 0,
-        replaceable: boolean = false,
+        locktime?: number,
+        replaceable?: boolean,
         outputAssets?: CRTOutputAssets)
 : Promise<string> =>
     Do<string>('createRawTransaction', inputs, outputs, locktime, replaceable, outputAssets);
@@ -381,8 +381,8 @@ export type Balance = { [type: string]: number };
 
 export const GetBalance = (
         dummy?: string,
-        minconf: number = 0,
-        includeWatchonly: boolean = false,
+        minconf?: number,
+        includeWatchonly?: boolean,
         assetlabel?: string)
 : Promise<Balance> =>
     Do<Balance>('getBalance', dummy, minconf, includeWatchonly, assetlabel);
@@ -419,7 +419,7 @@ export interface GetTransactionResult extends WalletTxEntry {
 
 export const GetTransaction = (
         txid: string,
-        includeWatchonly: boolean = false)
+        includeWatchonly?: boolean)
 : Promise<GetTransactionResult> =>
     Do<GetTransactionResult>('getTransaction', txid, includeWatchonly);
 
@@ -506,11 +506,11 @@ export interface ListUnspentQueryOptions {
 }
 
 export const ListUnspent = (
-        minconf: number = 1,
-        maxconf: number = 9999999,
-        addresses: string[] = [],
-        includeUnsafe: boolean = true,
-        queryOptions: ListUnspentQueryOptions = {}
+        minconf?: number,
+        maxconf?: number,
+        addresses?: string[],
+        includeUnsafe?: boolean,
+        queryOptions?: ListUnspentQueryOptions
     ): Promise<UTXO[]> =>
         Do<UTXO[]>('listUnspent', minconf, maxconf, addresses, includeUnsafe, queryOptions);
 
