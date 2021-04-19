@@ -278,9 +278,9 @@ export const SendToAddress = (
 
 export const BlindRawTransaction = (
         hexstring: string,
-        ignoreblindfail: boolean = true,
+        ignoreblindfail?: boolean,
         assetCommitments?: string[],
-        blindIssuances: boolean = true,
+        blindIssuances?: boolean,
         totalblinder?: string
 )
 : Promise<string> =>
