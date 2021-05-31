@@ -210,7 +210,7 @@ export const ListSinceBlock = (
 export const GetRawTransactionHex = (
         txid: string,
         blockhash?: string
-): Promise<string> => Do('getrawtransaction', txid, undefined, blockhash);
+): Promise<string> => Do('getrawtransaction', txid, false, blockhash);
 
 export const GetRawTransactionDetails = (
         txid: string,
