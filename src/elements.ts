@@ -1,4 +1,4 @@
-const bcrpc = require('bcrpc');
+const bcrpc = (() => require('bcrpc'))();
 
 import { config, Configuration, RPCHost } from './config';
 
@@ -149,6 +149,15 @@ export interface Transaction {
     vout: TxOut[];
 }
 
+export interface BlockTransaction extends Transaction {
+    hex: string;
+    in_active_chain: boolean;
+    blockhash: string;
+    confirmations: number;
+    blocktime: number;
+    time: number;
+}
+
 export interface WalletTxEntry {
     fee: number;
     confirmations: number;
@@ -193,6 +202,20 @@ export const ListSinceBlock = (
         includeRemoved?: boolean
 ): Promise<ListSinceBlockResult> =>
     Do<ListSinceBlockResult>('listSinceBlock', blockhash, targetConfirmations, includeWatchonly, includeRemoved);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RPC: getrawtransaction
+//
+
+export const GetRawTransactionHex = (
+        txid: string,
+        blockhash?: string
+): Promise<string> => Do('getRawTransaction', txid, false, blockhash);
+
+export const GetRawTransactionDetails = (
+        txid: string,
+        blockhash?: string
+): Promise<BlockTransaction> => Do('getRawTransaction', txid, true, blockhash);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: rawblindrawtransaction
