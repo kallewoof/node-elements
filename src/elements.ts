@@ -1,4 +1,4 @@
-const bcrpc = (() => require('bcrpc'))();
+const bcrpc = require('bcrpc');
 
 import { config, Configuration, RPCHost } from './config';
 
