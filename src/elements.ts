@@ -288,12 +288,16 @@ export const SendToAddress = (
         replaceable?: boolean,
         confTarget?: number,
         estimateMode?: "UNSET" | "ECONOMICAL" | "CONSERVATIVE",
+        avoidReuse?: boolean,
         assetlabel?: string,
-        ignoreblindfail?: boolean
+        ignoreblindfail?: boolean,
+        feeRate?: (number|string),
+        verbose?: boolean
 )
 : Promise<string> =>
     Do<string>('sendToAddress', address, amount, comment, commentTo, subtractfeefromamount,
-        replaceable, confTarget, estimateMode, assetlabel, ignoreblindfail);
+        replaceable, confTarget, estimateMode, avoidReuse, assetlabel, ignoreblindfail, feeRate,
+        verbose);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: blindrawtransaction
