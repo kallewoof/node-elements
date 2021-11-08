@@ -7,7 +7,7 @@ export interface RPCHost {
 
 export interface Configuration {
     elementsd: RPCHost;
-};
+}
 
 const e = process.env;
 

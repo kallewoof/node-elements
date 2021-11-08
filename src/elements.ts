@@ -271,9 +271,9 @@ export const SignRawTransactionWithWallet = (
 
 export const SendRawTransaction = (
         hexstring: string,
-        allowhighfees?: boolean)
+        maxfeerate?: number)
 : Promise<string> =>
-    Do<string>('sendRawTransaction', hexstring, allowhighfees);
+    Do<string>('sendRawTransaction', hexstring, maxfeerate);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // RPC: sendtoaddress

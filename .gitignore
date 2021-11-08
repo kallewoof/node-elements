@@ -104,3 +104,4 @@ dist
 .tern-port
 lib
 node_modules
+.DS_Store
